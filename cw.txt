@@ -1,0 +1,113 @@
+School of Computer Science – Coursework Issue Sheet (required for each Saturn component) 
+Session	2025-2026	Semester	1
+Module Name	Artificial Intelligence Methods	Code	COMP2051
+Module Convenor(s)
+(CW Convenor in Bold)	Ruibin Bai, Huan Jin, Siang Yew Chong
+			
+Coursework Name	Coursework: Genetic Programming Hyper-heuristic for Bin Packing Problem	Weight	30%
+Deliverable 
+(a brief description of what is to be handed-in; e.g. ‘software’, ‘report’, ‘presentation’, etc.)	All components in this coursework must be completed individually. You will apply a constructive hyper-heuristic method written in Java to solve the specified bin packing problem with the given problem instance datasets. Your report should include (1) The main components of the algorithm, including solution encoding, fitness function, list of terminals and operators as well as considerations regarding the intensification and diversification mechanisms. (2) Average results for the test sets 0, 4 and 8, in comparison with the published results from the paper detailed below. (3) A short discussion/reflection on results and performance of the algorithm.    
+Coursework Deliverable Requirements:
+	Report Submission (15 marks)
+	A written report no more than 2000 words and 6 pages. All screenshots must be clear and legible. 
+	Java File Submission (15 marks)
+	All Java files to be archived either in a single zip or tar file. Your source code should adopt a clean structure and be properly commented. The files must be executable following descriptions detailed below in Section 4.
+Format 
+(summary of the technical format of deliverable, e.g. 
+“C source code as zip file”, “pdf file, 2000 word max”, “ppt file, 10 slides max”, etc.)	Submit your report in PDF format using the naming convention: Name_ID.pdf. 
+Example: XiaomingChen_2019560.pdf
+Submit your Java files in a single archive file using the naming convention: ID.zip or ID.tar.
+Example: 2019560.zip or 2019560.tar.
+Your entry java file must be named ID.java. Example: GPHH2019560.java 
+	
+Issue Date	April 16, 2026
+Submission Date	May 18, 2026
+Submission Mechanism	Online submission via Moodle.
+
+You do NOT need to submit a hardcopy of your report to the faculty office.
+Late Policy
+(University of Nottingham default will apply, if blank)	The standard late submission policy applies, i.e., a 5% deduction of the total mark for every 24 hours, including weekends and holidays.
+Feedback Date	June 8, 2026
+Feedback Mechanism	Online feedback on Moodle.
+
+1. Introduction 
+Bin packing is one of the most studied combinatorial optimisation problems and has applications in logistics, space planning, production, cloud computing, etc. Bin packing is proven to be NP-Hard and the actual difficulties depend on both the size of the problem (i.e. the total number of items to be packed) and other factors like the distribution of item sizes in relation to the bin size as well as the number of distinct item sizes (different items may have a same size).  
+
+In this coursework, you are asked to write a Java program to solve this problem using a constructive hyper-heuristic method. In addition to submitting source code, a written report (no more than 2000 words and 6 pages) is required to describe your algorithm (see Section 4 for detailed requirements). Both your program and report must be completed independently by yourself. The submitted documents must successfully pass a plagiarism checker before they can be marked. Once a plagiarism case is established, the academic misconduct policies shall be applied strictly.
+
+2. Bin Packing Problem (BPP)
+Given a set of n items, each item j has a size of aj, BPP aims to pack all items in the minimum number of identical sized bins without violating the capacity of bins (V). The problem can be mathematically formulated as follow:
+
+ 
+
+This mathematical formulation is generally NOT solvable by existing integer programming solvers like CPlex, Gurobi, LPSolve, especially when the number of items n is large. The solution space of bin packing problem is characterised by its huge size and plateau-like that makes it very challenging for traditional neighbourhood search methods. In order to consistently solve the problem with good quality solutions, metaheuristics and hyper-heuristics are used, which is the task of this coursework.
+
+3. Problem instances  
+Over the years, a large number of BPP instances have been introduced by various research. See https://github.com/ESICUP/datasets for a collection of different bin packing problems. In this coursework, you are asked to use the dual-distribution (https://github.com/ESICUP/datasets/tree/main/1d/dualdistribution) dataset from the above collection. This dataset contains a training set and a testing set. You can train your algorithm on the training set while your algorithm shall be evaluated based on 15 instances drawn from the test set (https://github.com/ESICUP/datasets/tree/main/1d/dualdistribution/test, more specifically, the test cases shall be selected from testdual0, testdual4 and testdual8). For each test instance, only 1 run is executed, and its objective value is used for marking the performance component (see Section 5).   
+
+4. Experiments conditions and submission requirements
+The following requirements should be satisfied by your program:
+	You are required to submit two files exactly. The first file should be a compressed file (i.e., a zip file or a tar file) containing all your program source codes, including source for training. The second file is a coursework report. 
+	Your source code should adopt a clean structure and be properly commented. We may review your code to check for any signs of AI generated sources. We would also check your source code when clear inconsistencies exist between the test results and information in the report. 
+	Your report should include the followings:
+	The main components of the algorithm, including solution encoding, fitness function, list of terminals and operators as well as considerations regarding the intensification and diversification mechanisms. 
+(7 marks)
+
+	Average results for the data sets testdual0, testdual 4 and testdual8, in comparison with the published results from the following paper. Note that in the paper below, these three test sets are referred as testdual1, testdual5 and testdual9, respectively. This is because the Github dataset filenames use 0-based indexing (testdual0, testdual4, testdual8) while the paper refers to them as test sets 1, 5, and 9 (1-based).
+
+Burke E. K., Hyde M. R. and Kendall G. 2010. "Providing a Memory Mechanism to Enhance the Evolutionary Design of Heuristics". In Proceedings of the IEEE World Congress on Computational Intelligence (CEC 2010). July 18-23 2010, Barcelona, Spain, pp 3883--3890
+(3 marks)
+
+	A short discussion/reflection on results and performance of the algorithm. 
+(5 marks)
+
+	Name your program file after your student id. For example, if your student number is 2019560, name your program as 2019560.zip and entry java file as GPHH2019560.java (i.e. adding prefix “GPHH”).  
+	Your program should compile and run without errors on either csubuntu Server or a computer in PB226. Therefore, please fully test before submission. Your program is expected to compile successfully using the following command: 
+   javac *.java 
+	After compilation, your program should be executable using the following command (assuming your student id is 2019560 and your program entry point is placed in the java file named after your id):
+   java GPHH2019560 -s instance_file -o solution_file -t max_time
+where instance_file is one of problem instance files specified in Section 3. max_time is the maximum time permitted for a single run of your algorithm. In this coursework, maximum of 10 seconds is permitted. solution_file is the file for output the resulting solution by your algorithm. The format should be as follows: 
+Set_name_Instance_name
+obj=	objective_value 	L2_bound
+item_indx in bin0
+item_indx in bin1
+… …
+… … 
+
+Note that the item_indx is 0-index. An example solution file for problem data file “testdual\binpack0.txt” is available on moodle. 
+	The solution file output in (6) by your algorithm (solution_file) is expected to pass a solution checking test successfully using the following command on csubuntu server:  
+ java bpp_checker -s problem_file -c solution_file
+where problem_file is one of problem data files in Section 3. If your solution file format is correct and the stated objective value is accurate, you should get a command line message of “Success!". If the solution is infeasible or has an incorrect objective value, you would get error messages. The solution checker is available on Moodle for download. Here, the checker shall only check the feasibility of the solution and its objective value. The L2 lower bound in the solution file is simply for information only and shall NOT be used in marking. Additionally, the L2 lower bound values for the three test datasets are also made available on Moodle coursework page.  
+	Your algorithm should run only ONCE for each problem instance and each run should take no more than 10 seconds. Please note that this time limit apples to testing and instance level adaptation only. There is NO time limit for training your GPHH heuristic. 
+	You must separate your training and testing source code. During marking, we will not run the training part of your algorithm (although we may review the source code). This means that you just store and load your pre-trained GP heuristic when we run the test command given in point (6). 
+	Your GPHH is designed for solving the online packing problem. This means that the items must be packed in the same order as given in the test file. Once items are packed, you may not move items to another bin once packed. Also, as items information is only available upon arrival, NO prior sorting is permitted. 
+	In some test cases, your GP heuristic may fail to produce satisfactory results. Additional efforts or phases can be employed to improve the results by making full use of the 10-second computational budget per instance. Examples may include, but not limited to, the use of multiple GPHHs and/or fast re-optimization of the pretrained GP heuristic for each specific test case. However, as stipulated in the previous point, any re-optimization must respect the online packing constraint (items packed in given order, no moving once packed). 
+	You must strictly follow policies and regulations related to plagiarism.   
+
+5. Marking criteria 
+	The quality of the experimental results (15 marks). Your algorithm shall be tested for a file containing 15 instances chosen from the three test datasets (testdual0, testdual 4 and testdual8) (https://github.com/ESICUP/datasets/tree/main/1d/dualdistribution/test). The performance of your algorithm is evaluated by computing the absolute gap with the well-known L2 lower bound developed by the following paper:
+Silvano Martello, Paolo Toth, Lower bounds and reduction procedures for the bin packing problem, Discrete Applied Mathematics, Volume 28, Issue 1, 1990, Pages 59-70, https://doi.org/10.1016/0166-218X(90)90094-S.
+
+abs_gap=your_objective-L_2
+Criteria 	Mark
+abs_gap <=100	1 mark per instance. 
+100<abs_gap <=120	0.8 mark per instance
+120<abs_gap <=160	0.6 marks per instance
+160<abs_gap <=180	0.4 marks per instance
+180<abs_gap <=200	0.2 marks per instance
+	abs_gap >200 or 
+	infeasible solution or 
+	fail to output solution within required time limit 	0 mark
+
+	Report (15 marks)
+
+6. Submission deadline  
+18th May 2026, 4pm Beijing Time
+       Standard penalties are applied for late submissions. 
+
+7. How to submit
+Submit via Moodle.
+
+8. References
+	Burke E. K., Hyde M. R. and Kendall G. 2010. "Providing a Memory Mechanism to Enhance the Evolutionary Design of Heuristics". In Proceedings of the IEEE World Congress on Computational Intelligence (CEC 2010). July 18-23 2010, Barcelona, Spain, pp 3883—3890.
+	C Jin, R Bai, Y Zhou, X Chen, L Tan. Enhancing Online Yard Crane Scheduling through a Two-Stage Rollout Memetic Genetic Programming. Memetic Computing 16, 467–489. 
