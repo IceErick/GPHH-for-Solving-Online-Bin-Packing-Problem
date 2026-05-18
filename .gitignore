@@ -1,0 +1,25 @@
+# Papers
+Providing_a_Memory_Mechanism_to_Enhance.pdf
+1-s2.0-0166218X9090094S-main.pdf
+
+
+# Training set
+test
+train_augmented_v2
+train_augmented_v3
+train_augmented_v4
+train_scale_5000
+train_specialist_mid
+
+
+# Claude configuration
+CLAUDE.md
+.claude
+
+
+# Compile zip file
+20616316.Zip
+
+
+# Example data set
+l2_bounds_testdual_0_4_8_instances(1).csv
