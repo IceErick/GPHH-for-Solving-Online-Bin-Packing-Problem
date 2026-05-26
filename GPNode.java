@@ -8,19 +8,19 @@ import java.util.Random;
 public abstract class GPNode implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    /** Evaluate this node given the current bin and incoming item size. */
+    // Evaluate this node given the current bin and incoming item size.
     public abstract double evaluate(Bin bin, int itemSize);
 
-    /** Number of child nodes. */
+    // Number of child nodes.
     public abstract int arity();
 
-    /** Get child at index i. */
+    // Get child at index i.
     public abstract GPNode getChild(int i);
 
-    /** Set child at index i. */
+    // Set child at index i.
     public abstract void setChild(int i, GPNode child);
 
-    /** Total number of nodes in this subtree. */
+    // Total number of nodes in this subtree.
     public int getSize() {
         int size = 1;
         for (int i = 0; i < arity(); i++) {
@@ -31,7 +31,7 @@ public abstract class GPNode implements Serializable {
         return size;
     }
 
-    /** Maximum depth of this subtree. */
+    // Maximum depth of this subtree.
     public int getDepth() {
         int maxChildDepth = 0;
         for (int i = 0; i < arity(); i++) {
@@ -42,7 +42,7 @@ public abstract class GPNode implements Serializable {
         return 1 + maxChildDepth;
     }
 
-    /** Deep copy of this subtree. */
+    // Deep copy of this subtree.
     public abstract GPNode deepCopy();
 
     /**

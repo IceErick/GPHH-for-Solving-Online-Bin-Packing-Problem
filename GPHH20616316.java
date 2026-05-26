@@ -2,19 +2,14 @@ import java.io.*;
 import java.util.*;
 
 /**
- * GPHH for Online Bin Packing Problem - Testing Entry Point.
- *
- * Usage:
- *   java GPHH20616316 -s instance_file -o solution_file -t max_time
- *
- * Student ID: 20616316
+ * Testing Entry Point.
  */
 public class GPHH20616316 {
 
     private static final String ENSEMBLE_FILE = "trained_ensemble.ser";
     private static final String SINGLE_HEURISTIC_FILE = "trained_heuristic.ser";
 
-    /** Pre-loaded L2 lower bounds for test instances (from coursework). */
+    // Pre-loaded L2 lower bounds for test instances (from coursework).
     private static final Map<String, Integer> L2_BOUNDS = new HashMap<>();
     static {
         // testdual0
@@ -113,24 +108,87 @@ public class GPHH20616316 {
             BPPInstance instance = new BPPInstance(instanceFile);
             int l2Bound = lookupL2Bound(instanceFile);
 
-            // Run all strategies (GP-trained + deterministic) and pick best
+            // Load all GP heuristics
+            List<GPTree> heuristics = loadHeuristics();
             long deadlineMillis = deadline - 500;  // leave 500ms for output
 
             int[] bestAssignment = null;
             int bestBins = Integer.MAX_VALUE;
 
-            // Load all GP heuristics
-            List<GPTree> heuristics = loadHeuristics();
-
-            // Use pilot-based selection: try all heuristics on first 200 items,
-            // pick the best one, then run it on the full instance.
-            // Pilot phase takes ~0.05s total, leaving ~9.45s for main packing.
+            // Phase 1: Quick pilot on first 200 items to find top pre-trained heuristics
             int pilotItems = 200;
+            List<GPTree> topSeeds = new ArrayList<>();
             if (!heuristics.isEmpty()) {
-                bestAssignment = BPPSolver.packWithPilot(instance, heuristics, pilotItems, deadlineMillis);
-                if (bestAssignment != null) {
-                    bestBins = countBins(bestAssignment);
+                // Collect pilot results and sort by bin count
+                // Try both modes (with and without empty-bin-candidate)
+                Map<GPTree, Integer> bestPilotBins = new HashMap<>();
+                for (boolean allowEmpty : new boolean[]{false, true}) {
+                    for (GPTree h : heuristics) {
+                        int bins = BPPSolver.countBinsPilot(instance, h, pilotItems, allowEmpty);
+                        int prev = bestPilotBins.getOrDefault(h, Integer.MAX_VALUE);
+                        if (bins < prev) bestPilotBins.put(h, bins);
+                    }
                 }
+                List<GPTree> sorted = new ArrayList<>(heuristics);
+                sorted.sort((a, b) -> Integer.compare(
+                    bestPilotBins.getOrDefault(a, Integer.MAX_VALUE),
+                    bestPilotBins.getOrDefault(b, Integer.MAX_VALUE)));
+                // Take top 3 as seeds for the optimizer
+                int numSeeds = Math.min(3, sorted.size());
+                for (int i = 0; i < numSeeds; i++) {
+                    topSeeds.add(sorted.get(i));
+                }
+            }
+
+            // Phase 2: Exhaustive — try all pre-trained heuristics on full instance,
+            // both with and without empty-bin-candidate.
+            for (GPTree h : heuristics) {
+                for (boolean allowEmpty : new boolean[]{false, true}) {
+                    int[] assignment = BPPSolver.pack(instance, h, allowEmpty);
+                    int bins = countBins(assignment);
+                    if (bins < bestBins) {
+                        bestBins = bins;
+                        bestAssignment = assignment;
+                    }
+                }
+            }
+
+            // Phase 3: Instance-specific re-optimization (if >3s remaining)
+            // Mutation-based search evaluated on the full instance — no overfitting.
+            // Uses empty-bin-candidate mode to explore new strategic behavior.
+            if (!topSeeds.isEmpty() && System.currentTimeMillis() + 3000 < deadlineMillis) {
+                long optDeadline = deadlineMillis - 1000;  // leave 1s for deterministic fallback
+                int[] optResult = InstanceOptimizer.optimize(
+                    instance, topSeeds, bestAssignment, bestBins, optDeadline, true);
+                if (optResult != null) {
+                    int bins = countBins(optResult);
+                    if (bins < bestBins) {
+                        bestBins = bins;
+                        bestAssignment = optResult;
+                    }
+                }
+            }
+
+            // Phase 4: Deterministic heuristics as safety net
+            if (System.currentTimeMillis() <= deadlineMillis) {
+                int[] bf = BPPSolver.packBestFit(instance);
+                int bfBins = countBins(bf);
+                if (bfBins < bestBins) { bestBins = bfBins; bestAssignment = bf; }
+            }
+            if (System.currentTimeMillis() <= deadlineMillis) {
+                int[] bfm = BPPSolver.packBestFitMod(instance);
+                int bfmBins = countBins(bfm);
+                if (bfmBins < bestBins) { bestBins = bfmBins; bestAssignment = bfm; }
+            }
+            if (System.currentTimeMillis() <= deadlineMillis) {
+                int[] ff = BPPSolver.packFirstFit(instance);
+                int ffBins = countBins(ff);
+                if (ffBins < bestBins) { bestBins = ffBins; bestAssignment = ff; }
+            }
+            if (System.currentTimeMillis() <= deadlineMillis) {
+                int[] wf = BPPSolver.packWorstFit(instance);
+                int wfBins = countBins(wf);
+                if (wfBins < bestBins) { bestBins = wfBins; bestAssignment = wf; }
             }
 
             if (bestAssignment == null) {

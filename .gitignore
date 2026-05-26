@@ -3,22 +3,22 @@ Providing_a_Memory_Mechanism_to_Enhance.pdf
 1-s2.0-0166218X9090094S-main.pdf
 
 
-# Training set
-train
+# Useless training sets
 train_augmented
 train_augmented_v2
-train_augmented_v3
+train_augmented_v4
+train_scale_5000
 
-
-# Claude configuration
-CLAUDE.md
 .claude
-
-
-# CW
-20616316.Zip
-cw.txt
 report_content.md
+CLAUDE.md
+20616316.Zip
 
-# Example data set
-l2_bounds_testdual_0_4_8_instances(1).csv
+
+# Python code which generates useless training folders
+augment_training_v4.py
+augment_training.py
+
+
+# Apple system files
+.DS_Store

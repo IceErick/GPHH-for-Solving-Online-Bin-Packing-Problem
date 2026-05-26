@@ -2,7 +2,7 @@ import java.util.Random;
 
 /**
  * Terminal nodes for the GP tree.
- * Each terminal reads a feature of the bin or the incoming item.
+ * Each terminal reads a feature from the bin, the incoming item, or the packing context.
  */
 public class GPTerminal extends GPNode {
     private static final long serialVersionUID = 1L;
@@ -14,7 +14,10 @@ public class GPTerminal extends GPNode {
         EMPTINESS,     // C - F
         FULLNESS_RATIO, // F / C
         ITEM_COUNT,    // number of items in bin
-        MEAN_SIZE      // running mean of items seen so far
+        MEAN_SIZE,     // running mean of items seen so far
+        IS_NEW_BIN,    // 0.0 = existing bin, 1.0 = new-bin candidate
+        MIN_SIZE,      // minimum piece size seen so far
+        MAX_SIZE       // maximum piece size seen so far
     }
 
     private static final Type[] TYPES = Type.values();
@@ -46,6 +49,18 @@ public class GPTerminal extends GPNode {
             case MEAN_SIZE: {
                 PackingContext ctx = PackingContext.get();
                 return ctx != null ? ctx.getRunningMeanSize() : 0.0;
+            }
+            case IS_NEW_BIN: {
+                PackingContext ctx = PackingContext.get();
+                return (ctx != null && ctx.isEvaluatingNewBin()) ? 1.0 : 0.0;
+            }
+            case MIN_SIZE: {
+                PackingContext ctx = PackingContext.get();
+                return ctx != null ? ctx.getMinPieceSize() : 0.0;
+            }
+            case MAX_SIZE: {
+                PackingContext ctx = PackingContext.get();
+                return ctx != null ? ctx.getMaxPieceSize() : 0.0;
             }
             default:
                 return 0.0;

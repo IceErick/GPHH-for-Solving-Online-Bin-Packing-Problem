@@ -12,6 +12,16 @@ public class BPPSolver {
      * Returns an array where result[i] = bin index for item i.
      */
     public static int[] pack(BPPInstance instance, GPTree heuristic) {
+        return pack(instance, heuristic, false);
+    }
+
+    /**
+     * Pack items using a GP heuristic, optionally treating the empty bin
+     * as a candidate (evaluated alongside existing bins). When enabled,
+     * the heuristic can proactively open a new bin even when existing
+     * bins have room — useful for reserving space for future items.
+     */
+    public static int[] pack(BPPInstance instance, GPTree heuristic, boolean allowEmptyCandidate) {
         int[] items = instance.getItems();
         int capacity = instance.getCapacity();
         int[] assignment = new int[items.length];
@@ -22,7 +32,18 @@ public class BPPSolver {
         for (int i = 0; i < items.length; i++) {
             int itemSize = items[i];
 
-            double bestScore = Double.POSITIVE_INFINITY;
+            // Evaluate empty bin as candidate — it can always fit.
+            // If the heuristic prefers empty over all existing bins, a new bin is opened.
+            PackingContext ctx = PackingContext.get();
+            Bin emptyBin = new Bin(capacity);
+            double bestScore;
+            if (allowEmptyCandidate) {
+                ctx.setEvaluatingNewBin(true);
+                bestScore = heuristic.evaluate(emptyBin, itemSize);
+                ctx.setEvaluatingNewBin(false);
+            } else {
+                bestScore = Double.POSITIVE_INFINITY;
+            }
             int bestBinIndex = -1;
 
             // Evaluate all bins that can fit this item
@@ -41,7 +62,6 @@ public class BPPSolver {
                 bins.get(bestBinIndex).addItem(itemSize);
                 assignment[i] = bestBinIndex;
             } else {
-                // Create new bin
                 Bin newBin = new Bin(capacity);
                 newBin.addItem(itemSize);
                 bins.add(newBin);
@@ -375,7 +395,15 @@ public class BPPSolver {
      * Pack only the first n items and return the number of bins used.
      * Used for pilot phase to quickly evaluate heuristics.
      */
-    private static int countBinsPilot(BPPInstance instance, GPTree heuristic, int n) {
+    public static int countBinsPilot(BPPInstance instance, GPTree heuristic, int n) {
+        return countBinsPilot(instance, heuristic, n, false);
+    }
+
+    /**
+     * Pack the first n items, optionally treating the empty bin as a candidate.
+     */
+    public static int countBinsPilot(BPPInstance instance, GPTree heuristic, int n,
+                                     boolean allowEmptyCandidate) {
         int[] items = instance.getItems();
         int capacity = instance.getCapacity();
         List<Bin> bins = new ArrayList<>();
@@ -383,7 +411,16 @@ public class BPPSolver {
 
         for (int i = 0; i < n; i++) {
             int itemSize = items[i];
-            double bestScore = Double.POSITIVE_INFINITY;
+            PackingContext ctx = PackingContext.get();
+            Bin emptyBin = new Bin(capacity);
+            double bestScore;
+            if (allowEmptyCandidate) {
+                ctx.setEvaluatingNewBin(true);
+                bestScore = heuristic.evaluate(emptyBin, itemSize);
+                ctx.setEvaluatingNewBin(false);
+            } else {
+                bestScore = Double.POSITIVE_INFINITY;
+            }
             int bestBinIndex = -1;
 
             for (int b = 0; b < bins.size(); b++) {
@@ -405,7 +442,7 @@ public class BPPSolver {
                 bins.add(newBin);
             }
 
-            PackingContext.get().update(itemSize);
+            ctx.update(itemSize);
         }
 
         return bins.size();

@@ -1,13 +1,14 @@
 import java.util.*;
 
 /**
- * Genetic Programming engine with memory mechanism (Burke et al. 2010).
+ * Genetic Programming engine with memory mechanism.
  * Evolves a population of GP trees to minimise bins used across training instances.
  */
 public class GPEngine {
 
     private static final int POP_SIZE = 150;
-    private static final int GENERATIONS = 60;
+    private static final int DEFAULT_GENERATIONS = 60;
+    private final int generations;
     private static final int TOURNAMENT_SIZE = 3;
     private static final double CROSSOVER_RATE = 0.8;
     private static final double MUTATION_RATE = 0.20;
@@ -25,8 +26,13 @@ public class GPEngine {
     private GPTree bestEverTree = null;
 
     public GPEngine(long seed, List<BPPInstance> trainingInstances) {
+        this(seed, trainingInstances, DEFAULT_GENERATIONS);
+    }
+
+    public GPEngine(long seed, List<BPPInstance> trainingInstances, int generations) {
         this.rng = new Random(seed);
         this.trainingInstances = trainingInstances;
+        this.generations = generations;
         this.population = new ArrayList<>();
         this.memoryPool = new ArrayList<>();
     }
@@ -59,7 +65,7 @@ public class GPEngine {
         System.out.println("Gen 0: best=" + String.format("%.4f", bestFit)
             + " avg=" + String.format("%.4f", getAvgFitness()));
 
-        for (int gen = 1; gen <= GENERATIONS; gen++) {
+        for (int gen = 1; gen <= generations; gen++) {
             List<GPTree> newPopulation = new ArrayList<>();
 
             // Elitism
@@ -102,7 +108,7 @@ public class GPEngine {
                 bestEverTree = getBestTree().deepCopy();
             }
 
-            if (gen % 10 == 0 || gen == 1 || gen == GENERATIONS) {
+            if (gen % 10 == 0 || gen == 1 || gen == generations) {
                 System.out.println("Gen " + gen + ": best=" + String.format("%.4f", bestFit)
                     + " avg=" + String.format("%.4f", getAvgFitness())
                     + " everBest=" + String.format("%.4f", bestEverFitness)
@@ -118,17 +124,17 @@ public class GPEngine {
 
     private final IdentityHashMap<GPTree, Double> fitnessMap = new IdentityHashMap<>();
 
-    /**
-     * Fitness = averageBins + totalWaste / (totalItems * capacity * numInstances)
-     * The integer part is the bin count (primary objective).
-     * The fractional part breaks ties by preferring less total waste.
-     */
     private void evaluatePopulation() {
         for (GPTree tree : population) {
             evaluateFitness(tree);
         }
     }
 
+    /**
+     * Fitness = averageBins + totalWaste / (totalItems * capacity * numInstances).
+     * The integer part captures bin count (primary objective);
+     * the fractional part breaks ties by preferring less total waste.
+     */
     private double evaluateFitness(GPTree tree) {
         Double cached = fitnessMap.get(tree);
         if (cached != null) return cached;
@@ -139,7 +145,7 @@ public class GPEngine {
         int capacity = trainingInstances.get(0).getCapacity();
 
         for (BPPInstance inst : trainingInstances) {
-            int[] assignment = BPPSolver.pack(inst, tree);
+            int[] assignment = BPPSolver.pack(inst, tree, true);
             int bins = countBins(assignment);
             totalBins += bins;
             totalItems += inst.getItemCount();

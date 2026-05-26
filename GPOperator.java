@@ -14,7 +14,8 @@ public class GPOperator extends GPNode {
         DIV,    // a / b          (2 children, protected)
         MAX,    // max(a, b)      (2 children)
         MIN,    // min(a, b)      (2 children)
-        IF_LTE  // a <= b ? c : d (4 children)
+        IF_LTE, // a <= b ? c : d (4 children)
+        FI      // % of memory pieces ≤ child value (1 child)
     }
 
     private static final Type[] TYPES = Type.values();
@@ -23,7 +24,7 @@ public class GPOperator extends GPNode {
 
     public GPOperator(Type type) {
         this.type = type;
-        this.children = new GPNode[type == Type.IF_LTE ? 4 : 2];
+        this.children = new GPNode[type == Type.IF_LTE ? 4 : type == Type.FI ? 1 : 2];
     }
 
     public Type getType() {
@@ -67,6 +68,11 @@ public class GPOperator extends GPNode {
                 return children[0].evaluate(bin, itemSize) <= children[1].evaluate(bin, itemSize)
                     ? children[2].evaluate(bin, itemSize)
                     : children[3].evaluate(bin, itemSize);
+            case FI: {
+                double x = children[0].evaluate(bin, itemSize);
+                PackingContext ctx = PackingContext.get();
+                return ctx != null ? ctx.getProportionFitting((int) x) : 0.0;
+            }
             default:
                 return 0.0;
         }

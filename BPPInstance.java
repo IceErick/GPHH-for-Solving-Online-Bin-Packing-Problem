@@ -6,7 +6,7 @@ import java.util.*;
  * Format: all lines are item sizes (one per line). Bin capacity is a fixed parameter.
  */
 public class BPPInstance {
-    /** Default bin capacity for dual-distribution instances (Burke et al. 2010). */
+    // Default bin capacity for dual-distribution instances
     public static final int DEFAULT_CAPACITY = 100;
 
     private final int capacity;

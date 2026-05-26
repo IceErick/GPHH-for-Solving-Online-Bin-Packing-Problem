@@ -62,10 +62,9 @@ public class TrainGPHH {
             allTraining.add(augStationary.get(i));
         }
 
-        System.out.println("Total training instances: " + allTraining.size());
+        System.out.println("Total generalist training instances: " + allTraining.size());
         System.out.println("Bin capacity: " + allTraining.get(0).getCapacity());
 
-        // Print distribution stats
         double totalSum = 0;
         for (BPPInstance inst : allTraining) {
             for (int item : inst.getItems()) totalSum += item;
@@ -75,19 +74,20 @@ public class TrainGPHH {
             + " (min bins: " + String.format("%.0f", avgSum / allTraining.get(0).getCapacity()) + ")");
         System.out.println();
 
-        // Run multiple training runs with different seeds for ensemble diversity
-        int numRuns = 3;
         List<GPTree> allBestTrees = new ArrayList<>();
 
-        for (int run = 0; run < numRuns; run++) {
+        // ---- Phase 1: Generalist Training (3 runs) ----
+        // Trained on the full mixed set for broad applicability.
+        int numGeneralists = 3;
+        System.out.println("=== Phase 1: Generalist Training (" + numGeneralists + " runs) ===");
+        for (int run = 0; run < numGeneralists; run++) {
             long seed = 42 + run * 1000;
-            System.out.println("--- Training Run " + (run + 1) + "/" + numRuns
+            System.out.println("--- Generalist Run " + (run + 1) + "/" + numGeneralists
                 + " (seed=" + seed + ") ---");
 
             GPEngine engine = new GPEngine(seed, allTraining);
             GPTree bestTree = engine.evolve();
 
-            // Evaluate best tree on all training instances for report
             int totalBins = 0;
             for (BPPInstance inst : allTraining) {
                 int[] assignment = BPPSolver.pack(inst, bestTree);
@@ -103,11 +103,59 @@ public class TrainGPHH {
             System.out.println();
         }
 
-        // Serialize the single overall best tree as default
+        // ---- Phase 2: Specialist Training (5 runs) ----
+        // Filter instances with avg item size 42-44 (matching testdual4/8 distribution).
+        // Specialists learn adaptive strategies for mid-size items.
+        List<BPPInstance> specialistInstances = new ArrayList<>();
+        for (BPPInstance inst : augmentedInstances) {
+            double avg = avgItemSize(inst);
+            if (avg >= 42.0 && avg <= 44.0) {
+                specialistInstances.add(inst);
+            }
+        }
+        System.out.println("Specialist instances (avg 42-44): " + specialistInstances.size()
+            + " out of " + augmentedInstances.size());
+        // Also include some originals that match the mid-size range
+        for (BPPInstance inst : originalInstances) {
+            double avg = avgItemSize(inst);
+            if (avg >= 42.0 && avg <= 44.0) {
+                specialistInstances.add(inst);
+            }
+        }
+        System.out.println("Specialist instances (with originals): " + specialistInstances.size());
+        System.out.println();
+
+        int numSpecialists = 5;
+        System.out.println("=== Phase 2: Specialist Training (" + numSpecialists + " runs) ===");
+        for (int run = 0; run < numSpecialists; run++) {
+            long seed = 10000 + run * 1000;
+            System.out.println("--- Specialist Run " + (run + 1) + "/" + numSpecialists
+                + " (seed=" + seed + ") ---");
+
+            GPEngine engine = new GPEngine(seed, specialistInstances);
+            GPTree bestTree = engine.evolve();
+
+            int totalBins = 0;
+            for (BPPInstance inst : specialistInstances) {
+                int[] assignment = BPPSolver.pack(inst, bestTree);
+                totalBins += countBins(assignment);
+            }
+            double avgBins = (double) totalBins / specialistInstances.size();
+            System.out.println("  Best tree: avg bins = " + String.format("%.1f", avgBins)
+                + ", size = " + bestTree.getSize() + ", depth = " + bestTree.getDepth());
+            System.out.println("  Best tree: " + bestTree.toString());
+
+            allBestTrees.add(bestTree);
+            serializeTree(bestTree, "trained_specialist_" + (run + 1) + ".ser");
+            System.out.println();
+        }
+
+        // Serialize the best generalist as default
         serializeTree(allBestTrees.get(0), "trained_heuristic.ser");
 
-        // Serialize ensemble
-        System.out.println("Serializing ensemble of " + allBestTrees.size() + " heuristics...");
+        // Serialize combined ensemble (3 generalists + 5 specialists = 8)
+        System.out.println("Serializing ensemble of " + allBestTrees.size()
+            + " heuristics (" + numGeneralists + " generalist + " + numSpecialists + " specialist)...");
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream("trained_ensemble.ser"))) {
             oos.writeObject(allBestTrees);
@@ -156,5 +204,12 @@ public class TrainGPHH {
             if (a > max) max = a;
         }
         return max + 1;
+    }
+
+    private static double avgItemSize(BPPInstance instance) {
+        int[] items = instance.getItems();
+        long sum = 0;
+        for (int s : items) sum += s;
+        return (double) sum / items.length;
     }
 }
